@@ -20,5 +20,4 @@ docker exec -it prepare-php-cli composer require --dev phpunit/phpunit
 * Run Tests
 ```
 docker exec -it prepare-php-cli vendor/bin/phpunit tests
-
 ```
