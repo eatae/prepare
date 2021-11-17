@@ -1,0 +1,85 @@
+version: '3.6'
+
+services:
+
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - ../:/var/www/prepare
+    container_name: ${COMPOSE_PROJECT_NAME}-nginx
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+    volumes:
+      - ../:/var/www/prepare
+    container_name: ${COMPOSE_PROJECT_NAME}-php-fpm
+    depends_on:
+      - postgres
+      - mysql
+    environment:
+          XDEBUG_CONFIG: "remote_host=host.docker.internal remote_enable=1"
+          PHP_IDE_CONFIG: "serverName=Docker"
+
+  php-cli:
+    build:
+      context: ./php-cli
+    volumes:
+      - ../:/var/www/prepare
+    command: sleep 25000
+    container_name: ${COMPOSE_PROJECT_NAME}-php-cli
+    environment:
+      XDEBUG_CONFIG: "remote_host=host.docker.internal remote_enable=1"
+      PHP_IDE_CONFIG: "serverName=Docker"
+
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}-rabbit
+    hostname: my-rabbit
+    volumes:
+      - ./rabbitmq/etc/:/etc/rabbitmq/
+      - ./rabbitmq/data/:/var/lib/rabbitmq/
+      - ./rabbitmq/logs/:/var/log/rabbitmq/
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+
+  postgres:
+    image: postgres
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    container_name: ${COMPOSE_PROJECT_NAME}-postgres
+    restart: unless-stopped
+    ports:
+      - "54320:5432"
+    environment:
+      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+      - "POSTGRES_DB=${POSTGRES_DB}"
+
+
+  mysql:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    restart: unless-stopped
+    ports:
+      - "33062:3306"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "MYSQL_DATABASE=${MYSQL_DATABASE}"
+      - "MYSQL_USER=${MYSQL_USER}"
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+
+
+volumes:
+    mysql:
+    postgres:
