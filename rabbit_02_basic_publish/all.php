@@ -1,5 +1,6 @@
 <?php
 require_once realpath(__DIR__ .'/../config.php');
+require_once realpath(__DIR__ .'/../vendor/autoload.php');
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -32,10 +33,27 @@ $channel->queue_declare(
 $channel->exchange_declare(
     $exchangeName,
     'direct',
-    true,
+    false,   // если укажем true, то не создаётся exchange и падаем с ошибкой если такого нет
     false
 );
 
 // bind queue adn exchange
 $channel->queue_bind($queueName, $exchangeName);
 
+
+$toSend = new AMQPMessage(
+    'Test message',
+    ['content_type' => 'text/plain', 'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
+);
+
+// publish msg
+$channel->basic_publish($toSend, $exchangeName);
+
+// get msg
+$message = $channel->basic_get($queueName);
+$channel->basic_ack($message->delivery_info['delivery_tag']);
+var_dump($message->body);
+
+// close connection
+$channel->close();
+$connection->close();
